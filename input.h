@@ -51,6 +51,7 @@ typedef struct Label {
 } Label;
 
 extern Label **route_labels;
+extern int secrets_enabled;
 
 /* forwards */
 

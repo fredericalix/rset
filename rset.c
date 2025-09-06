@@ -34,6 +34,8 @@
 #include "input.h"
 #include "rutils.h"
 #include "worker.h"
+#include "rsecret_scanner.h"
+#include "rset_secrets.h"
 
 /* forwards */
 static void handle_exit(int sig);
@@ -56,6 +58,7 @@ int restore_opt;
 int tty_opt;
 int verbose_opt;
 int stop_on_err_opt;
+int secrets_opt;
 int n_parallel;
 char *sshconfig_file;
 char *env_override;
@@ -139,6 +142,9 @@ main(int argc, char *argv[]) {
 		create_dir(PUBLIC_DIRECTORY);
 	}
 
+	/* set global secrets flag for input parsing */
+	secrets_enabled = secrets_opt;
+
 	/* parse route labels */
 	route_labels = alloc_labels();
 	read_route_labels(routes_file);
@@ -151,6 +157,12 @@ main(int argc, char *argv[]) {
 	/* parse pln files for each host */
 	for (i = 0; route_labels[i]; i++)
 		read_host_labels(route_labels[i]);
+
+	/* validate secrets if secrets mode is enabled */
+	if (secrets_opt) {
+		if (validate_all_secrets(route_labels) != 0)
+			errx(1, "Secret validation failed");
+	}
 
 	/* ensure hostnames are valid */
 	compare_argv_routes(hostnames, route_labels);
@@ -180,8 +192,14 @@ main(int argc, char *argv[]) {
 	/* select a port to communicate on */
 	http_port = get_socket();
 
-	if (pledge("stdio rpath proc exec unveil tmppath", NULL) == -1)
-		err(1, "pledge");
+	/* add inet for secret validation if needed */
+	if (secrets_opt) {
+		if (pledge("stdio rpath proc exec unveil tmppath inet", NULL) == -1)
+			err(1, "pledge");
+	} else {
+		if (pledge("stdio rpath proc exec unveil tmppath", NULL) == -1)
+			err(1, "pledge");
+	}
 
 	/* main loop */
 	if (dryrun_opt) {
@@ -415,9 +433,9 @@ static void
 usage() {
 	fprintf(stderr, "release: %s\n", RELEASE);
 	fprintf(stderr,
-	    "usage: rset [-AenRtv] [-E environment] [-F sshconfig_file] [-f routes_file]\n"
+	    "usage: rset [-AenRstv] [-E environment] [-F sshconfig_file] [-f routes_file]\n"
 	    "            [-x label_pattern] hostname ...\n"
-	    "       rset [-ev] [-E environment] [-F sshconfig_file] [-f routes_file]\n"
+	    "       rset [-esv] [-E environment] [-F sshconfig_file] [-f routes_file]\n"
 	    "            [-x label_pattern] -o log_directory -p workers hostname ...\n");
 	exit(1);
 }
@@ -432,7 +450,7 @@ set_options(int argc, char *argv[], char *hostnames[]) {
 
 	bzero(&op, sizeof op);
 
-	while ((ch = getopt(argc, argv, "AenRtvE:F:f:o:p:x:")) != -1) {
+	while ((ch = getopt(argc, argv, "AenRstvE:F:f:o:p:x:")) != -1) {
 		switch (ch) {
 		case 'A':
 			archive_opt = 1;
@@ -451,6 +469,9 @@ set_options(int argc, char *argv[], char *hostnames[]) {
 			break;
 		case 'R':
 			restore_opt = 1;
+			break;
+		case 's':
+			secrets_opt = 1;
 			break;
 		case 'E':
 			env_override = optarg;

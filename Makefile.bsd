@@ -4,15 +4,19 @@ PREFIX ?= /usr/local
 MANPREFIX ?= ${PREFIX}/man
 RELEASE = 3.2
 
-RSET_COMPONENTS = rutils input execute worker
-RSET_OBJS = ${RSET_COMPONENTS:=.o} compat.o rset.o
-RSET_INC = ${RSET_COMPONENTS:=.h} config.h missing/compat.h
+RSET_COMPONENTS = rutils input execute worker rset_secrets
+RSECRET_COMPONENTS = rsecret_config rsecret_memory rsecret_redis rsecret_gpg rsecret_scanner
+RSET_OBJS = ${RSET_COMPONENTS:=.o} ${RSECRET_COMPONENTS:=.o} compat.o rset.o
+RSET_INC = ${RSET_COMPONENTS:=.h} rsecret.h rsecret_scanner.h rset_secrets.h config.h missing/compat.h
+
+RSECRET_OBJS = ${RSECRET_COMPONENTS:=.o} compat.o rsecret.o
+RSECRET_INC = rsecret.h missing/compat.h
 
 QUARK_COMPONENTS = sock http
 QUARK_OBJS = ${QUARK_COMPONENTS:=.o} compat.o miniquark.o
 QUARK_INC = ${QUARK_COMPONENTS:=.h} missing/compat.h
 
-PROGS = rset miniquark rinstall rsub labelgrep renv rexec-summary
+PROGS = rset rsecret miniquark rinstall rsub labelgrep renv rexec-summary
 
 all: ${PROGS}
 
@@ -27,6 +31,12 @@ rset.o: ${RSET_INC} rset.c
 
 rset: ${RSET_COMPONENTS:=.h} ${RSET_OBJS}
 	${CC} ${CFLAGS} ${CPPFLAGS} -o $@ ${RSET_OBJS} ${LDFLAGS}
+
+rsecret.o: ${RSECRET_INC} rsecret.c
+	${CC} ${CFLAGS} ${CPPFLAGS} -DRELEASE=\"${RELEASE}\" -c rsecret.c
+
+rsecret: ${RSECRET_INC} ${RSECRET_OBJS}
+	${CC} ${CFLAGS} ${CPPFLAGS} -o $@ ${RSECRET_OBJS} ${LDFLAGS}
 
 miniquark.o: ${QUARK_INC} miniquark.c
 	${CC} ${CFLAGS} ${CPPFLAGS} -DRELEASE=\"${RELEASE}\" -c miniquark.c
@@ -53,6 +63,7 @@ install: ${PROGS}
 	install -m 644 renv.1 ${DESTDIR}${MANPREFIX}/man1
 	install -m 644 rinstall.1 ${DESTDIR}${MANPREFIX}/man1
 	install -m 644 rset.1 ${DESTDIR}${MANPREFIX}/man1
+	install -m 644 rsecret.1 ${DESTDIR}${MANPREFIX}/man1
 	install -m 644 rsub.1 ${DESTDIR}${MANPREFIX}/man1
 	install labelgrep ${DESTDIR}${PREFIX}/bin
 	install miniquark ${DESTDIR}${PREFIX}/bin
@@ -60,6 +71,7 @@ install: ${PROGS}
 	install rexec-summary ${DESTDIR}${PREFIX}/bin
 	install rinstall ${DESTDIR}${PREFIX}/bin
 	install rset ${DESTDIR}${PREFIX}/bin
+	install rsecret ${DESTDIR}${PREFIX}/bin
 	install rsub ${DESTDIR}${PREFIX}/bin
 
 uninstall:
@@ -68,6 +80,7 @@ uninstall:
 	rm ${DESTDIR}${MANPREFIX}/man1/renv.1
 	rm ${DESTDIR}${MANPREFIX}/man1/rinstall.1
 	rm ${DESTDIR}${MANPREFIX}/man1/rset.1
+	rm ${DESTDIR}${MANPREFIX}/man1/rsecret.1
 	rm ${DESTDIR}${MANPREFIX}/man1/rsub.1
 	rm ${DESTDIR}${MANPREFIX}/man5/pln.5
 	rm ${DESTDIR}${PREFIX}/bin/labelgrep
@@ -76,6 +89,7 @@ uninstall:
 	rm ${DESTDIR}${PREFIX}/bin/rexec-summary
 	rm ${DESTDIR}${PREFIX}/bin/rinstall
 	rm ${DESTDIR}${PREFIX}/bin/rset
+	rm ${DESTDIR}${PREFIX}/bin/rsecret
 	rm ${DESTDIR}${PREFIX}/bin/rsub
 
 test: ${PROGS}

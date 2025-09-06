@@ -28,12 +28,14 @@
 #include "config.h"
 #include "execute.h"
 #include "input.h"
+#include "rsecret_scanner.h"
 
 #define LABELS_MAX 100
 #define BUFSIZE 4096
 
 /* globals from input.h */
 extern Label **route_labels;
+int secrets_enabled = 0;
 
 /* globals */
 FILE *yyin;
@@ -179,6 +181,17 @@ parse_pln(Label **labels) {
 	free(line);
 	if (ferror(yyin))
 		err(1, "getline");
+
+	/* substitute secrets in parsed labels if secrets mode is enabled */
+	if (secrets_enabled) {
+		for (i = 0; i < n_labels; i++) {
+			if (labels[i] && labels[i]->content) {
+				if (substitute_secrets_in_content(&labels[i]->content, &labels[i]->content_size) != 0) {
+					erry("failed to substitute secrets in label '%s'", labels[i]->name);
+				}
+			}
+		}
+	}
 }
 
 /*
