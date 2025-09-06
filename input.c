@@ -63,7 +63,7 @@ void
 parse_pln(Label **labels) {
 	int content_allocation = 0;
 	int error_code;
-	int j;
+	int i, j;
 	int tfd = 0;
 	int local_argc;
 	enum { Local, Remote } context;

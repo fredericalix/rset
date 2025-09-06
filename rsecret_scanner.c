@@ -297,3 +297,33 @@ extract_secret_key(const char *pattern_start, const char *pattern_end) {
 
 	return key;
 }
+
+int
+validate_secret_key(const char *key) {
+	size_t len;
+	const char *p;
+
+	if (!key || *key == '\0')
+		return 0;
+
+	len = strlen(key);
+	if (len >= MAX_SECRET_KEY_SIZE)
+		return 0;
+
+	/* key must start with letter or underscore */
+	if (!(*key >= 'a' && *key <= 'z') && 
+	    !(*key >= 'A' && *key <= 'Z') && 
+	    *key != '_')
+		return 0;
+
+	/* rest can be letters, numbers, underscores, colons, dashes */
+	for (p = key + 1; *p; p++) {
+		if (!(*p >= 'a' && *p <= 'z') && 
+		    !(*p >= 'A' && *p <= 'Z') && 
+		    !(*p >= '0' && *p <= '9') && 
+		    *p != '_' && *p != ':' && *p != '-')
+			return 0;
+	}
+
+	return 1;
+}

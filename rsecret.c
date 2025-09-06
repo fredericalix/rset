@@ -24,6 +24,10 @@
 
 #include "missing/compat.h"
 #include "rsecret.h"
+#include "rsecret_scanner.h"
+
+/* forwards */
+static void usage(void);
 
 /* globals */
 static RSConfig *config = NULL;
@@ -150,41 +154,11 @@ main(int argc, char *argv[]) {
 	return ret;
 }
 
-void
+static void
 usage() {
 	fprintf(stderr, "usage: rsecret [-c config] -g key\n");
 	fprintf(stderr, "       rsecret [-c config] -s key value\n");
 	fprintf(stderr, "       rsecret [-c config] -l\n");
 	fprintf(stderr, "       rsecret [-c config] -v key1 key2 ...\n");
 	exit(1);
-}
-
-int
-validate_secret_key(const char *key) {
-	size_t len;
-	const char *p;
-
-	if (!key || *key == '\0')
-		return 0;
-
-	len = strlen(key);
-	if (len >= MAX_SECRET_KEY_SIZE)
-		return 0;
-
-	/* key must start with letter or underscore */
-	if (!(*key >= 'a' && *key <= 'z') && 
-	    !(*key >= 'A' && *key <= 'Z') && 
-	    *key != '_')
-		return 0;
-
-	/* rest can be letters, numbers, underscores, colons, dashes */
-	for (p = key + 1; *p; p++) {
-		if (!(*p >= 'a' && *p <= 'z') && 
-		    !(*p >= 'A' && *p <= 'Z') && 
-		    !(*p >= '0' && *p <= '9') && 
-		    *p != '_' && *p != ':' && *p != '-')
-			return 0;
-	}
-
-	return 1;
 }

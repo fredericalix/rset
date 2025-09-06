@@ -69,6 +69,5 @@ void secure_free(void *ptr, size_t size);
 
 /* Utility functions */
 int validate_secret_key(const char *key);
-void usage(void);
 
 #endif /* _RSECRET_H_ */
