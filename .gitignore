@@ -8,6 +8,7 @@ renv
 rexec-summary
 rinstall
 rset
+rsecret
 rsub
 tests/args
 tests/cmd_pipe_stdin

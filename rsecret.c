@@ -52,6 +52,13 @@ main(int argc, char *argv[]) {
 		err(1, "pledge");
 #endif
 
+	/* handle --help before getopt */
+	for (int i = 1; i < argc; i++) {
+		if (strcmp(argv[i], "--help") == 0) {
+			usage();
+		}
+	}
+
 	while ((ch = getopt(argc, argv, "c:g:s:lv")) != -1) {
 		switch (ch) {
 		case 'c':
